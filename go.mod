@@ -163,3 +163,7 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/hashicorp/aws-sdk-go-base/v2 => github.com/hashicorp/aws-sdk-go-base/v2 v2.0.0-beta.31.0.20230718003554-b6aa51f259a5 // f-return-diags
+
+replace github.com/hashicorp/aws-sdk-go-base/v2/awsv1shim/v2 => github.com/hashicorp/aws-sdk-go-base/v2/awsv1shim/v2 v2.0.0-beta.32.0.20230718003554-b6aa51f259a5 // f-return-diags
