@@ -10,6 +10,7 @@ import (
 	appconfig_sdkv2 "github.com/aws/aws-sdk-go-v2/service/appconfig"
 	auditmanager_sdkv2 "github.com/aws/aws-sdk-go-v2/service/auditmanager"
 	cleanrooms_sdkv2 "github.com/aws/aws-sdk-go-v2/service/cleanrooms"
+	cloud9_sdkv2 "github.com/aws/aws-sdk-go-v2/service/cloud9"
 	cloudcontrol_sdkv2 "github.com/aws/aws-sdk-go-v2/service/cloudcontrol"
 	cloudwatchlogs_sdkv2 "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	comprehend_sdkv2 "github.com/aws/aws-sdk-go-v2/service/comprehend"
@@ -90,7 +91,6 @@ import (
 	chimesdkmeetings_sdkv1 "github.com/aws/aws-sdk-go/service/chimesdkmeetings"
 	chimesdkmessaging_sdkv1 "github.com/aws/aws-sdk-go/service/chimesdkmessaging"
 	chimesdkvoice_sdkv1 "github.com/aws/aws-sdk-go/service/chimesdkvoice"
-	cloud9_sdkv1 "github.com/aws/aws-sdk-go/service/cloud9"
 	clouddirectory_sdkv1 "github.com/aws/aws-sdk-go/service/clouddirectory"
 	cloudformation_sdkv1 "github.com/aws/aws-sdk-go/service/cloudformation"
 	cloudfront_sdkv1 "github.com/aws/aws-sdk-go/service/cloudfront"
@@ -505,8 +505,8 @@ func (c *AWSClient) CleanRoomsClient(ctx context.Context) *cleanrooms_sdkv2.Clie
 	return errs.Must(client[*cleanrooms_sdkv2.Client](ctx, c, names.CleanRooms))
 }
 
-func (c *AWSClient) Cloud9Conn(ctx context.Context) *cloud9_sdkv1.Cloud9 {
-	return errs.Must(conn[*cloud9_sdkv1.Cloud9](ctx, c, names.Cloud9))
+func (c *AWSClient) Cloud9Client(ctx context.Context) *cloud9_sdkv2.Client {
+	return errs.Must(client[*cloud9_sdkv2.Client](ctx, c, names.Cloud9))
 }
 
 func (c *AWSClient) CloudControlClient(ctx context.Context) *cloudcontrol_sdkv2.Client {
