@@ -29,6 +29,7 @@ const (
 	AccountEndpointID                    = "account"
 	ACMEndpointID                        = "acm"
 	AuditManagerEndpointID               = "auditmanager"
+	Cloud9EndpointID                     = "cloud9"
 	CloudWatchLogsEndpointID             = "logs"
 	ComprehendEndpointID                 = "comprehend"
 	ComputeOptimizerEndpointID           = "computeoptimizer"
