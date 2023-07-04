@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/cloud9"
+	"github.com/aws/aws-sdk-go-v2/service/cloud9/types"
 	sdkacctest "github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -16,18 +16,18 @@ import (
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
 	tfcloud9 "github.com/hashicorp/terraform-provider-aws/internal/service/cloud9"
 	"github.com/hashicorp/terraform-provider-aws/internal/tfresource"
+	"github.com/hashicorp/terraform-provider-aws/names"
 )
 
 func TestAccCloud9EnvironmentMembership_basic(t *testing.T) {
 	ctx := acctest.Context(t)
-	var conf cloud9.EnvironmentMember
-
+	var conf types.EnvironmentMember
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 	resourceName := "aws_cloud9_environment_membership.test"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { acctest.PreCheck(ctx, t); acctest.PreCheckPartitionHasService(t, cloud9.EndpointsID) },
-		ErrorCheck:               acctest.ErrorCheck(t, cloud9.EndpointsID),
+		PreCheck:                 func() { acctest.PreCheck(ctx, t); acctest.PreCheckPartitionHasService(t, names.Cloud9EndpointID) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.Cloud9EndpointID),
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
 		CheckDestroy:             testAccCheckEnvironmentMemberDestroy(ctx),
 		Steps: []resource.TestStep{
@@ -60,14 +60,13 @@ func TestAccCloud9EnvironmentMembership_basic(t *testing.T) {
 
 func TestAccCloud9EnvironmentMembership_disappears(t *testing.T) {
 	ctx := acctest.Context(t)
-	var conf cloud9.EnvironmentMember
-
+	var conf types.EnvironmentMember
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 	resourceName := "aws_cloud9_environment_membership.test"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { acctest.PreCheck(ctx, t); acctest.PreCheckPartitionHasService(t, cloud9.EndpointsID) },
-		ErrorCheck:               acctest.ErrorCheck(t, cloud9.EndpointsID),
+		PreCheck:                 func() { acctest.PreCheck(ctx, t); acctest.PreCheckPartitionHasService(t, names.Cloud9EndpointID) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.Cloud9EndpointID),
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
 		CheckDestroy:             testAccCheckEnvironmentMemberDestroy(ctx),
 		Steps: []resource.TestStep{
@@ -86,14 +85,13 @@ func TestAccCloud9EnvironmentMembership_disappears(t *testing.T) {
 
 func TestAccCloud9EnvironmentMembership_disappears_env(t *testing.T) {
 	ctx := acctest.Context(t)
-	var conf cloud9.EnvironmentMember
-
+	var conf types.EnvironmentMember
 	rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 	resourceName := "aws_cloud9_environment_membership.test"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { acctest.PreCheck(ctx, t); acctest.PreCheckPartitionHasService(t, cloud9.EndpointsID) },
-		ErrorCheck:               acctest.ErrorCheck(t, cloud9.EndpointsID),
+		PreCheck:                 func() { acctest.PreCheck(ctx, t); acctest.PreCheckPartitionHasService(t, names.Cloud9EndpointID) },
+		ErrorCheck:               acctest.ErrorCheck(t, names.Cloud9EndpointID),
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
 		CheckDestroy:             testAccCheckEnvironmentMemberDestroy(ctx),
 		Steps: []resource.TestStep{
@@ -110,30 +108,28 @@ func TestAccCloud9EnvironmentMembership_disappears_env(t *testing.T) {
 	})
 }
 
-func testAccCheckEnvironmentMemberExists(ctx context.Context, n string, res *cloud9.EnvironmentMember) resource.TestCheckFunc {
+func testAccCheckEnvironmentMemberExists(ctx context.Context, n string, v *types.EnvironmentMember) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
 		}
 
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No Cloud9 Environment Member ID is set")
-		}
+		conn := acctest.Provider.Meta().(*conns.AWSClient).Cloud9Client(ctx)
 
-		conn := acctest.Provider.Meta().(*conns.AWSClient).Cloud9Conn(ctx)
+		environmentID, userARN, err := tfcloud9.EnvironmentMembershipParseResourceID(rs.Primary.ID)
 
-		envId, userArn, err := tfcloud9.DecodeEnviornmentMemberId(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		out, err := tfcloud9.FindEnvironmentMembershipByID(ctx, conn, envId, userArn)
+		output, err := tfcloud9.FindEnvironmentMembershipByTwoPartKey(ctx, conn, environmentID, userARN)
+
 		if err != nil {
 			return err
 		}
 
-		*res = *out
+		*v = *output
 
 		return nil
 	}
@@ -141,19 +137,20 @@ func testAccCheckEnvironmentMemberExists(ctx context.Context, n string, res *clo
 
 func testAccCheckEnvironmentMemberDestroy(ctx context.Context) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		conn := acctest.Provider.Meta().(*conns.AWSClient).Cloud9Conn(ctx)
+		conn := acctest.Provider.Meta().(*conns.AWSClient).Cloud9Client(ctx)
 
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "aws_cloud9_environment_membership" {
 				continue
 			}
 
-			envId, userArn, err := tfcloud9.DecodeEnviornmentMemberId(rs.Primary.ID)
+			environmentID, userARN, err := tfcloud9.EnvironmentMembershipParseResourceID(rs.Primary.ID)
+
 			if err != nil {
 				return err
 			}
 
-			_, err = tfcloud9.FindEnvironmentMembershipByID(ctx, conn, envId, userArn)
+			_, err = tfcloud9.FindEnvironmentMembershipByTwoPartKey(ctx, conn, environmentID, userARN)
 
 			if tfresource.NotFound(err) {
 				continue
@@ -163,8 +160,9 @@ func testAccCheckEnvironmentMemberDestroy(ctx context.Context) resource.TestChec
 				return err
 			}
 
-			return fmt.Errorf("Cloud9 Environment Membership %q still exists.", rs.Primary.ID)
+			return fmt.Errorf("Cloud9 Environment Membership %s still exists.", rs.Primary.ID)
 		}
+
 		return nil
 	}
 }
