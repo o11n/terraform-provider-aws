@@ -639,23 +639,23 @@ func resourceTableDelete(ctx context.Context, d *schema.ResourceData, meta inter
 	return nil
 }
 
-const tableIDSeparator = "/"
+const tableResourceIDSeparator = "/"
 
 func tableCreateResourceID(keyspaceName, tableName string) string {
 	parts := []string{keyspaceName, tableName}
-	id := strings.Join(parts, tableIDSeparator)
+	id := strings.Join(parts, tableResourceIDSeparator)
 
 	return id
 }
 
 func tableParseResourceID(id string) (string, string, error) {
-	parts := strings.Split(id, tableIDSeparator)
+	parts := strings.Split(id, tableResourceIDSeparator)
 
 	if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
 		return parts[0], parts[1], nil
 	}
 
-	return "", "", fmt.Errorf("unexpected format for ID (%[1]s), expected KEYSPACE-NAME%[2]sTABLE-NAME", id, tableIDSeparator)
+	return "", "", fmt.Errorf("unexpected format for ID (%[1]s), expected KEYSPACE-NAME%[2]sTABLE-NAME", id, tableResourceIDSeparator)
 }
 
 func findTableByTwoPartKey(ctx context.Context, conn *keyspaces.Client, keyspaceName, tableName string) (*keyspaces.GetTableOutput, error) {

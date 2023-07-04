@@ -597,20 +597,20 @@ func flattenPartitionKeys(apiObjects []types.PartitionKey) []interface{} {
 	return tfList
 }
 
-const tableIDSeparator = ":"
+const tableResourceIDSeparator = ":"
 
 func tableCreateResourceID(tableName, databaseName string) string {
 	parts := []string{tableName, databaseName}
-	id := strings.Join(parts, tableIDSeparator)
+	id := strings.Join(parts, tableResourceIDSeparator)
 
 	return id
 }
 
 func tableParseResourceID(id string) (string, string, error) {
-	parts := strings.SplitN(id, tableIDSeparator, 2)
+	parts := strings.SplitN(id, tableResourceIDSeparator, 2)
 
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return "", "", fmt.Errorf("unexpected format of ID (%[1]s), expected table_name%[2]sdatabase_name", id, tableIDSeparator)
+		return "", "", fmt.Errorf("unexpected format of ID (%[1]s), expected table_name%[2]sdatabase_name", id, tableResourceIDSeparator)
 	}
 
 	return parts[0], parts[1], nil
