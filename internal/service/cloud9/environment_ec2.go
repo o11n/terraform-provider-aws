@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-provider-aws/internal/enum"
 	"github.com/hashicorp/terraform-provider-aws/internal/errs"
 	"github.com/hashicorp/terraform-provider-aws/internal/errs/sdkdiag"
+	"github.com/hashicorp/terraform-provider-aws/internal/slices"
 	tftags "github.com/hashicorp/terraform-provider-aws/internal/tags"
 	"github.com/hashicorp/terraform-provider-aws/internal/tfresource"
 	"github.com/hashicorp/terraform-provider-aws/internal/verify"
@@ -210,8 +211,16 @@ func resourceEnvironmentEC2Delete(ctx context.Context, d *schema.ResourceData, m
 	var diags diag.Diagnostics
 	conn := meta.(*conns.AWSClient).Cloud9Client(ctx)
 
+	// Prevent errors like
+	// "operation error Cloud9: DeleteEnvironment, https response error StatusCode: 400, RequestID: ..., deserialization failed, failed to decode response body, json: cannot unmarshal number into Go struct field .Code of type string"
+	err := findEnvironmentExists(ctx, conn, d.Id())
+
+	if tfresource.NotFound(err) {
+		return nil
+	}
+
 	log.Printf("[INFO] Deleting Cloud9 EC2 Environment: %s", d.Id())
-	_, err := conn.DeleteEnvironment(ctx, &cloud9.DeleteEnvironmentInput{
+	_, err = conn.DeleteEnvironment(ctx, &cloud9.DeleteEnvironmentInput{
 		EnvironmentId: aws.String(d.Id()),
 	})
 
@@ -230,6 +239,32 @@ func resourceEnvironmentEC2Delete(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	return diags
+}
+
+func findEnvironmentExists(ctx context.Context, conn *cloud9.Client, id string) error {
+	input := &cloud9.ListEnvironmentsInput{}
+	var output []string
+
+	pages := cloud9.NewListEnvironmentsPaginator(conn, input)
+	for pages.HasMorePages() {
+		page, err := pages.NextPage(ctx)
+
+		if err != nil {
+			return err
+		}
+
+		output = append(output, page.EnvironmentIds...)
+	}
+
+	output = slices.Filter(output, func(v string) bool {
+		return v == id
+	})
+
+	if len(output) == 0 {
+		return &retry.NotFoundError{}
+	}
+
+	return nil
 }
 
 func findEnvironment(ctx context.Context, conn *cloud9.Client, input *cloud9.DescribeEnvironmentsInput) (*types.Environment, error) {
@@ -264,6 +299,14 @@ func findEnvironments(ctx context.Context, conn *cloud9.Client, input *cloud9.De
 }
 
 func findEnvironmentByID(ctx context.Context, conn *cloud9.Client, id string) (*types.Environment, error) {
+	// Prevent errors like
+	// "operation error Cloud9: DescribeEnvironments, https response error StatusCode: 400, RequestID: ..., deserialization failed, failed to decode response body, json: cannot unmarshal number into Go struct field .Code of type string"
+	err := findEnvironmentExists(ctx, conn, id)
+
+	if err != nil {
+		return nil, err
+	}
+
 	input := &cloud9.DescribeEnvironmentsInput{
 		EnvironmentIds: []string{id},
 	}
